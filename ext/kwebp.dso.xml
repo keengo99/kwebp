@@ -1,0 +1,4 @@
+<!--#start 1 -->
+<config>
+<dso_extend name='kwebp' filename='bin/kwebp.${dso}'/>
+</config>
