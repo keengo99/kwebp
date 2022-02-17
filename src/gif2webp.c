@@ -9,8 +9,9 @@
 #include "gifdec.h"
 #include "webp/encode.h"
 #include "webp/mux.h"
-#include "../imageio/imageio_util.h"
+#include "imageio/imageio_util.h"
 #include "upstream.h"
+#ifdef WEBP_HAVE_GIF
 #define MAX_GIF_DATA 8388608
 static int transparent_index = GIF_INDEX_INVALID;  // Opaque by default.
 
@@ -386,3 +387,4 @@ KGL_RESULT gif2webp(webp_context *webp,WebPData *webp_data) {
 	   }
 	   return result;
 }
+#endif

@@ -31,12 +31,14 @@ bool webp_read_picture(webp_context *webp) {
 	if (!ok) {
 		WebPPictureFree(webp->u.picture);
 		free(webp->u.picture);
+#ifdef WEBP_HAVE_GIF
 		webp->is_gif = true;
 		webp->u.gif_data = (WebPData *)malloc(sizeof(WebPData));
 		WebPDataInit(webp->u.gif_data);
 		if (KGL_OK == gif2webp(webp,webp->u.gif_data)) {
 			ok = true;
 		}
+#endif
 	}
 #endif
 	//printf("webp_read_picture result=[%d]\n",ok);
