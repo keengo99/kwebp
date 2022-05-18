@@ -1,25 +1,25 @@
-cmake_minimum_required(VERSION 2.8) 
+cmake_minimum_required(VERSION 2.8.12) 
 project(kwebp)
 list(APPEND KWEBP_SOURCE_FILES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/access.c  
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/main.c  
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/push_gate.c  
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/upstream.c  
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/vary.c  
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/webp_encode.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/unix_encode.c 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/access.c  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/push_gate.c  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/upstream.c  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vary.c  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/webp_encode.c 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix_encode.c 
     )
 
 if (CMAKE_SYSTEM_NAME  MATCHES "Windows")
     list(APPEND KWEBP_LIBS "windowscodecs")
     list(APPEND KWEBP_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/win_encode.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/win_encode.c
     )
 else()
 # list(APPEND KWEBP_LIBS "webp")
     list(APPEND KWEBP_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/gifdec.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/gif2webp.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gifdec.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gif2webp.c
     )
     option(LIBWEBP_DIR "set libwebp dir")
     list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBWEBP_DIR})
@@ -32,15 +32,15 @@ option(KANGLE_DIR "set kangle dir")
 
 list(APPEND CMAKE_REQUIRED_INCLUDES ${KANGLE_DIR}/include)
 list(APPEND CMAKE_REQUIRED_INCLUDES ${KANGLE_DIR}/kasync/include)
-
+list(APPEND CMAKE_REQUIRED_INCLUDES ${KANGLE_DIR}/khttpd/include)
 #list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBWEBP_DIR})
 #list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBWEBP_DIR}/src)
 
 
 include(CheckIncludeFiles)
 check_include_files("ksapi.h;kfeature.h;kforwin32.h" FOUND_KSAPI_HEADER)
-if (NOT FOUND_KSAPI_HEADER) 
-    message(FATAL_ERROR "cann't found ksapi.h. try cmake -DKANGLE_DIR=kangle_dir")
+if (NOT FOUND_KSAPI_HEADER)
+    message(FATAL_ERROR "cann't found ksapi.h. try cmake -DKANGLE_DIR=kangle_dir ${CMAKE_REQUIRED_INCLUDES}")
 endif()
 find_package(WebP)
 message(STATUS "libwebp version ${WEBP_VERSION}")
@@ -55,7 +55,7 @@ target_link_libraries(kwebp ${KWEBP_LIBS} )
 set(CMAKE_INSTALL_PREFIX ${KANGLE_DIR})
 install(TARGETS kwebp LIBRARY DESTINATION bin)
 install(DIRECTORY
-     ${CMAKE_CURRENT_SOURCE_DIR}/../ext/
+     ${CMAKE_CURRENT_SOURCE_DIR}/ext/
     DESTINATION "ext"
 )
 include(CPack)

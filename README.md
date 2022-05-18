@@ -13,8 +13,9 @@ sudo make install
 * build kwebp use cmake
 ```
 git clone https://github.com/keengo99/kwebp
-cd kwebp/build
-cmake . -D KANGLE_DIR=kangle_installed_dir -D LIBWEBP_DIR=libwebp_dir
+cd kwebp
+mkdir build && cd build
+cmake .. -D KANGLE_DIR=kangle_installed_dir -D LIBWEBP_DIR=libwebp_dir
 make
 make install
 ```
