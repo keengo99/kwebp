@@ -109,7 +109,7 @@ static uint32_t process(KREQUEST rq, kgl_access_context *ctx, DWORD notify)
 	}
 	len = sizeof(buf);
 	buf[0] = '\0';
-	if (KGL_OK == ctx->f->get_variable(rq, KGL_VAR_HEADER, "Accept", buf, &len) && is_support_webp(buf)) {
+	if (KGL_OK == ctx->f->get_variable(rq, KGL_VAR_HEADER, "Accept", buf, &len) && is_support_webp(buf,len)) {
 		c->accept_support = 1;
 	}
 	if (!register_upstream(rq, ctx, c)) {

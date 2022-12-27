@@ -52,7 +52,7 @@ bool add_buff_data(webp_buffer *buf, const char *data, int len, int max_length)
 		}
 		int align_len = 2 * buf->used;
 		align_len = kgl_align(align_len, 4096);
-		new_len = MAX(new_len, align_len);
+		new_len = KGL_MAX(new_len, align_len);
 		if (!realloc_buffer(buf, new_len)) {
 			return false;
 		}
@@ -96,45 +96,6 @@ void push_status(kgl_output_stream*gate, KREQUEST rq, int status_code) {
 KGL_RESULT push_unknow_header(kgl_output_stream*gate, KREQUEST rq, const char *attr, hlen_t attr_len, const char *val, hlen_t val_len)
 {
 	kgl_async_context *ctx = get_async_context(gate);
-	webp_context *webp = (webp_context *)ctx->module;
-	if (webp->no_encode) {
-		return ctx->out->f->write_unknow_header(ctx->out, rq, attr, attr_len, val, val_len);
-	}
-	if (strcasecmp(attr, "Content-Length") == 0) {
-		return KGL_OK;
-	}
-	if (strcasecmp(attr, "Vary") == 0) {
-		if (webp->vary == NULL) {
-			webp->vary = (char *)malloc(val_len+1);
-			memcpy(webp->vary, val, val_len);
-			webp->vary[val_len] = '\0';
-			webp->vary_len = val_len;
-		}
-		return KGL_OK;
-	}
-	if (strcasecmp(attr, "Content-Type") == 0) {
-		if (strncasecmp(val, kgl_expand_string("image/")) == 0 && strcasecmp(val,"image/webp")!=0) {
-			//result = init_webp_reader(webp, WEBP_JPEG_FORMAT);
-			/*
-			if (strcasecmp(val, "image/gif") == 0) {
-				//gif特殊处理
-				webp->is_gif = 1;
-				//printf("content-type is gif\n");
-			}
-			*/
-			webp->is_webp = 1;
-			if (webp->accept_support) {
-				if (webp->origin_content_type) {
-					free(webp->origin_content_type);
-				}
-				//把content-type头保存，未来如果转码失败，可以发回原来的头.
-				webp->origin_content_type = strlendup(val, val_len);
-				return KGL_OK;
-			}
-		}
-		webp->no_encode = 1;
-		buffer_destroy(&webp->buff);
-	}
 	return ctx->out->f->write_unknow_header(ctx->out, rq, attr, attr_len, val, val_len);
 }
 KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr, const char *val, hlen_t val_len)
@@ -159,10 +120,45 @@ KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr
 		}
 		return KGL_OK;
 	}
-	default:
-		return ctx->out->f->write_header(ctx->out, rq, attr, val, val_len);
+	case kgl_header_content_type:
+	{
+		if (strncasecmp(val, kgl_expand_string("image/")) == 0 && strcasecmp(val, "image/webp") != 0) {
+			//result = init_webp_reader(webp, WEBP_JPEG_FORMAT);
+			/*
+			if (strcasecmp(val, "image/gif") == 0) {
+				//gif特殊处理
+				webp->is_gif = 1;
+				//printf("content-type is gif\n");
+			}
+			*/
+			webp->is_webp = 1;
+			if (webp->accept_support) {
+				if (webp->origin_content_type) {
+					free(webp->origin_content_type);
+				}
+				//把content-type头保存，未来如果转码失败，可以发回原来的头.
+				webp->origin_content_type = strlendup(val, val_len);
+				return KGL_OK;
+			}
+		}
+		webp->no_encode = 1;
+		buffer_destroy(&webp->buff);
+		break;
 	}
-	return KGL_OK;
+	case kgl_header_vary:
+	{
+		if (webp->vary == NULL) {
+			webp->vary = (char*)malloc(val_len + 1);
+			memcpy(webp->vary, val, val_len);
+			webp->vary[val_len] = '\0';
+			webp->vary_len = val_len;
+		}
+		return KGL_OK;
+	}
+	default:
+		break;
+	}
+	return ctx->out->f->write_header(ctx->out, rq, attr, val, val_len);
 }
 
 KGL_RESULT begin_response_header(kgl_async_context *ctx, KREQUEST rq)
@@ -174,7 +170,7 @@ KGL_RESULT begin_response_header(kgl_async_context *ctx, KREQUEST rq)
 		ctx->f->support_function(rq, ctx->cn, KD_REQ_OBJ_IDENTITY, NULL, NULL);
 		//是webp就要发送vary头
 		if (webp->vary == NULL) {
-			ctx->out->f->write_unknow_header(ctx->out, rq, kgl_expand_string("Vary"), kgl_expand_string(WEBP_VARY));
+			ctx->out->f->write_header(ctx->out, rq, kgl_header_vary, kgl_expand_string(WEBP_VARY));
 		} else {
 			int new_len = webp->vary_len + sizeof(WEBP_VARY) + 3;
 			char *vary = (char *)malloc(new_len);
@@ -186,21 +182,21 @@ KGL_RESULT begin_response_header(kgl_async_context *ctx, KREQUEST rq)
 			memcpy(hot, kgl_expand_string(WEBP_VARY));
 			hot += sizeof(WEBP_VARY)-1;
 			*hot = '\0';
-			ctx->out->f->write_unknow_header(ctx->out, rq, kgl_expand_string("Vary"), vary,(hlen_t)(hot-vary));
+			ctx->out->f->write_header(ctx->out, rq, kgl_header_vary, vary,(hlen_t)(hot-vary));
 			free(vary);
 		}
 	}
 	if (webp->no_encode) {
 		//发回原来的content_type,vary,还有content_length;
 		if (webp->vary) {
-			ctx->out->f->write_unknow_header(ctx->out, rq, kgl_expand_string("Vary"), webp->vary, webp->vary_len);
+			ctx->out->f->write_header(ctx->out, rq, kgl_header_vary, webp->vary, webp->vary_len);
 		}
 		if (webp->origin_content_type) {
-			ctx->out->f->write_unknow_header(ctx->out, rq, kgl_expand_string("Content-Type"), webp->origin_content_type, (hlen_t)strlen(webp->origin_content_type));
+			ctx->out->f->write_header(ctx->out, rq, kgl_header_content_type, webp->origin_content_type, (hlen_t)strlen(webp->origin_content_type));
 		}
 		return ctx->out->f->write_header_finish(ctx->out, rq);
 	}
-	ctx->out->f->write_unknow_header(ctx->out, rq, kgl_expand_string("Content-Type"), kgl_expand_string("image/webp"));
+	ctx->out->f->write_header(ctx->out, rq, kgl_header_content_type, kgl_expand_string("image/webp"));
 	return ctx->out->f->write_header_finish(ctx->out, rq);
 }
 KGL_RESULT push_header_finish(kgl_output_stream*gate, KREQUEST rq)
@@ -281,15 +277,6 @@ KGL_RESULT push_body_finish(kgl_output_stream*gate, KREQUEST rq, KGL_RESULT resu
 		return begin_response_header(ctx, rq);
 	};
 	return begin_response(ctx, rq);
-	/*
-	result = webp_encode_picture(rq, ctx);
-	if (result != KGL_OK) {
-		if (webp->has_write_body) {
-			return ctx->gate->f->push_body_finish(ctx->gate, rq, result);
-		}
-	}
-	return ctx->gate->f->push_body_finish(ctx->gate, rq, result);
-	*/
 }
 KGL_RESULT handle_error(kgl_output_stream* out, KREQUEST rq, KGL_MSG_TYPE msg_type, const void* msg, int msg_flag)
 {
