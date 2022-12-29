@@ -71,8 +71,8 @@ bool add_buff_data(webp_buffer *buf, const char *data, int len, int max_length)
 	assert(buf->left >= 0);
 	return true;
 }
-void push_status(kgl_output_stream*gate, KREQUEST rq, int status_code) {
-	kgl_async_context *ctx = get_async_context(gate);
+void push_status(kgl_output_stream*gate, KREQUEST rq, uint16_t status_code) {
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
 	if (status_code != 200) {
 		webp->no_encode = 1;
@@ -95,12 +95,12 @@ void push_status(kgl_output_stream*gate, KREQUEST rq, int status_code) {
 }
 KGL_RESULT push_unknow_header(kgl_output_stream*gate, KREQUEST rq, const char *attr, hlen_t attr_len, const char *val, hlen_t val_len)
 {
-	kgl_async_context *ctx = get_async_context(gate);
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	return ctx->out->f->write_unknow_header(ctx->out, rq, attr, attr_len, val, val_len);
 }
 KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr, const char *val, hlen_t val_len)
 {
-	kgl_async_context *ctx = get_async_context(gate);
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
 	if (webp->no_encode) {
 		return ctx->out->f->write_header(ctx->out, rq, attr, val, val_len);
@@ -201,7 +201,7 @@ KGL_RESULT begin_response_header(kgl_async_context *ctx, KREQUEST rq)
 }
 KGL_RESULT push_header_finish(kgl_output_stream*gate, KREQUEST rq)
 {
-	kgl_async_context *ctx = get_async_context(gate);
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
 	if (!webp->is_webp) {
 		//在header发送完，还没收到content-type
@@ -215,7 +215,7 @@ KGL_RESULT push_header_finish(kgl_output_stream*gate, KREQUEST rq)
 
 KGL_RESULT push_body(kgl_output_stream*gate, KREQUEST rq, const char *str, int len)
 {
-	kgl_async_context *ctx = get_async_context(gate);
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
 	if (webp->no_encode) {
 		return ctx->out->f->write_body(ctx->out, rq, str, len);
@@ -255,7 +255,7 @@ KGL_RESULT begin_response(kgl_async_context* ctx, KREQUEST rq)
 }
 KGL_RESULT push_body_finish(kgl_output_stream*gate, KREQUEST rq, KGL_RESULT result)
 {
-	kgl_async_context *ctx = get_async_context(gate);
+	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
 	webp->upstream_was_body_finish = 1;
 	webp->upstream_push_body_result = result;

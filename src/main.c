@@ -16,7 +16,7 @@ DLL_PUBLIC BOOL  kgl_dso_init(kgl_dso_version *ver)
 	register_vary(ver);
 	return TRUE;
 }
-DLL_PUBLIC BOOL  kgl_dso_finit(DWORD flag)
+DLL_PUBLIC BOOL  kgl_dso_finit(int32_t flag)
 {
 	return TRUE;
 }
