@@ -45,52 +45,14 @@ static KGL_RESULT webp_open(KREQUEST rq, kgl_async_context *ctx)
 	out->f->release(out);
 	return result;
 }
-#if 0
-static KGL_RESULT webp_read(KREQUEST rq, kgl_async_context *ctx)
-{
-	webp_context *webp = (webp_context *)ctx->module;
-	if (!webp->upstream_was_body_finish) {
-		if (ctx->us) {
-			return ctx->us->read(rq, ctx);
-		}
-		return ctx->gate->f->push_message(ctx->gate, rq, KGL_MSG_ERROR, 500, "no upstream");
-	}
-	if (webp->no_encode) {
-		if (webp->buff.data == NULL) {
-			return ctx->gate->f->push_body_finish(ctx->gate, rq, webp->upstream_push_body_result);
-		}
-#ifdef _WIN32
-		char *image_mem = (char *)GlobalLock(webp->buff.data);
-		KGL_RESULT result = ctx->gate->f->push_body(ctx->gate, rq, image_mem, webp->buff.used);
-		GlobalUnlock(image_mem);
-#else
-		KGL_RESULT result = ctx->gate->f->push_body(ctx->gate, rq, webp->buff.data, webp->buff.used);
-#endif
-		if (result == KGL_OK) {
-			result = webp->upstream_push_body_result;
-		}
-		return ctx->gate->f->push_body_finish(ctx->gate, rq, result);
-	}
-	return ctx->gate->f->push_body_finish(ctx->gate, rq, webp_encode_picture(rq, ctx));
-}
-
-static void webp_close(KREQUEST rq, kgl_async_context *ctx)
-{
-	webp_context *c = (webp_context *)ctx->module;
-	free_webp_context(c);
-	if (ctx->us) {
-		ctx->us->close(rq, ctx);
-	}
-}
-#endif
 static kgl_async_upstream upstream = {
 	sizeof(kgl_async_upstream),
 	0,
 	"webp",
 	create_ctx,
 	free_ctx,
-	NULL,
-	webp_open
+	webp_open,
+	NULL
 };
 bool register_upstream(KREQUEST rq, kgl_access_context *ctx, webp_context *c)
 {

@@ -98,7 +98,7 @@ KGL_RESULT push_unknow_header(kgl_output_stream*gate, KREQUEST rq, const char *a
 	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	return ctx->out->f->write_unknow_header(ctx->out, rq, attr, attr_len, val, val_len);
 }
-KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr, const char *val, hlen_t val_len)
+KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr, const char *val, int val_len)
 {
 	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	webp_context *webp = (webp_context *)ctx->module;
@@ -108,15 +108,18 @@ KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr
 	switch (attr) {
 	case kgl_header_content_length:
 	{
-		INT64 *content_length = (INT64 *)val;
-		if (webp->buff.data) {
-			free(webp->buff.data);
-			webp->buff.data = NULL;
-		}
-		webp->content_length = (int)(*content_length);
-		if (webp->content_length > webp->max_length) {
-			webp->no_encode = 1;
-			return ctx->out->f->write_header(ctx->out, rq, attr, val, val_len);
+		if (val_len == KGL_HEADER_VALUE_INT64) {
+			INT64* content_length = (INT64*)val;
+			if (webp->buff.data) {
+				free(webp->buff.data);
+				webp->buff.data = NULL;
+			}
+			webp->content_length = (int)(*content_length);
+
+			if (webp->content_length > webp->max_length) {
+				webp->no_encode = 1;
+				return ctx->out->f->write_header(ctx->out, rq, attr, val, val_len);
+			}
 		}
 		return KGL_OK;
 	}
