@@ -98,6 +98,10 @@ KGL_RESULT push_unknow_header(kgl_output_stream*gate, KREQUEST rq, const char *a
 	kgl_async_context *ctx = kgl_get_out_async_context(gate);
 	return ctx->out->f->write_unknow_header(ctx->out, rq, attr, attr_len, val, val_len);
 }
+static KGL_RESULT push_trailer(kgl_output_stream* gate, KREQUEST rq, const char* attr, hlen_t attr_len, const char* val, hlen_t val_len) {
+	kgl_async_context* ctx = kgl_get_out_async_context(gate);
+	return ctx->out->f->write_trailer(ctx->out, rq, attr, attr_len, val, val_len);
+}
 KGL_RESULT push_header(kgl_output_stream*gate, KREQUEST rq, kgl_header_type attr, const char *val, int val_len)
 {
 	kgl_async_context *ctx = kgl_get_out_async_context(gate);
@@ -290,8 +294,9 @@ static kgl_output_stream_function push_gate_function = {
 	push_header,
 	push_unknow_header,
 	push_header_finish,
-	push_body,	
+	push_body,
 	handle_error,
+	push_trailer,
 	push_body_finish,
 	(void (*)(kgl_output_stream *))free
 };
