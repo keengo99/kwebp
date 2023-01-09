@@ -260,6 +260,9 @@ KGL_RESULT begin_response(kgl_async_context* ctx, KREQUEST rq)
 	}
 	return ctx->out->f->write_end(ctx->out, rq, webp_encode_picture(rq, ctx));
 }
+static bool support_sendfile(kgl_output_stream* out, KREQUEST rq) 	{
+	return false;
+}
 KGL_RESULT push_body_finish(kgl_output_stream*gate, KREQUEST rq, KGL_RESULT result)
 {
 	kgl_async_context *ctx = kgl_get_out_async_context(gate);
@@ -297,6 +300,8 @@ static kgl_output_stream_function push_gate_function = {
 	push_body,
 	handle_error,
 	push_trailer,
+	support_sendfile,
+	NULL,
 	push_body_finish,
 	(void (*)(kgl_output_stream *))free
 };
