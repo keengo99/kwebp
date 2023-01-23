@@ -47,10 +47,11 @@ typedef struct _webp_context {
 	} u;
 	WebPConfig config;
 	webp_buffer buff;
+	kgl_response_body body;
 } webp_context;
 
 bool register_upstream(KREQUEST rq, kgl_access_context *ctx, webp_context *c);
-kgl_output_stream *init_push_gate(kgl_async_context *ctx);
+void init_push_gate(kgl_async_context* ctx, kgl_output_stream* out);
 bool init_webp_context(webp_context *ctx, WebPConfig *config);
 static INLINE void buffer_init(webp_buffer *buf)
 {

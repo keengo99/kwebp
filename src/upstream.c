@@ -38,15 +38,13 @@ static void free_ctx(void *ctx)
 static KGL_RESULT webp_open(KREQUEST rq, kgl_async_context *ctx)
 {
 	webp_context *c = (webp_context *)ctx->module;
-	kgl_output_stream *out = init_push_gate(ctx);
+	kgl_output_stream out;
+	init_push_gate(ctx, &out);
 	assert(!c->is_webp);
-	KGL_RESULT result = ctx->f->open_next(rq, ctx->cn, ctx->in, out, NULL);
-	free_webp_context(c);
-	out->f->release(out);
-	return result;
+	return ctx->f->open_next(rq, ctx->cn, ctx->in, &out, NULL);
 }
-static kgl_async_upstream upstream = {
-	sizeof(kgl_async_upstream),
+static kgl_upstream upstream = {
+	sizeof(kgl_upstream),
 	0,
 	"webp",
 	create_ctx,
