@@ -48,6 +48,7 @@ typedef struct _webp_context {
 	WebPConfig config;
 	webp_buffer buff;
 	kgl_response_body body;
+	KREQUEST rq;
 } webp_context;
 
 bool register_upstream(KREQUEST rq, kgl_access_context *ctx, webp_context *c);

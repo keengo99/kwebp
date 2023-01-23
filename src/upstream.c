@@ -54,6 +54,7 @@ static kgl_upstream upstream = {
 };
 bool register_upstream(KREQUEST rq, kgl_access_context *ctx, webp_context *c)
 {
+	c->rq = rq;
 	return KGL_OK == ctx->f->support_function(rq, ctx->cn, KF_REQ_UPSTREAM, &upstream, (void **)&c);
 }
 bool init_webp_context(webp_context *ctx, WebPConfig *config)

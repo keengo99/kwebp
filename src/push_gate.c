@@ -49,7 +49,6 @@ static KGL_RESULT kwebp_close(kgl_response_body_ctx* gate, KGL_RESULT result)
 	webp->upstream_push_body_result = result;
 	if (webp->send_header) {
 		return webp->body.f->close(webp->body.ctx, result);
-		//return ctx->out->f->write_end(ctx->out, rq, result);
 	}
 	if (result != KGL_OK) {
 		webp->is_webp = 0;
@@ -150,8 +149,7 @@ void push_status(kgl_output_stream_ctx *gate, uint16_t status_code) {
 		webp->is_webp = 0;
 	}
 	if (status_code == 304) {
-#if 0
-		KHTTPOBJECT obj = server_support->obj->get_old_obj(rq);
+		KHTTPOBJECT obj = server_support->obj->get_old_obj(webp->rq);
 		if (obj != NULL) {
 			char old_vary[255];
 			DWORD size = sizeof(old_vary);
@@ -162,7 +160,6 @@ void push_status(kgl_output_stream_ctx *gate, uint16_t status_code) {
 				}
 			}
 		}
-#endif
 	}
 	ctx->out->f->write_status(ctx->out->ctx, status_code);
 }
@@ -249,9 +246,7 @@ KGL_RESULT begin_response_header(kgl_async_context *ctx, int64_t body_size, kgl_
 	webp->send_header = 1;
 	if (webp->is_webp) {
 		//KD_REQ_OBJ_IDENTITY 提高缓存命中率
-		kgl_url *url = ctx->in->f->get_url(ctx->in->ctx);
-		url->accept_encoding = (uint8_t)(~0);
-	
+		ctx->f->support_function(webp->rq, ctx->cn, KD_REQ_OBJ_IDENTITY, NULL, NULL);
 		//是webp就要发送vary头
 		if (webp->vary == NULL) {
 			ctx->out->f->write_header(ctx->out->ctx, kgl_header_vary, kgl_expand_string(WEBP_VARY));
