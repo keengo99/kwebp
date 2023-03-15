@@ -5,9 +5,8 @@
 #include "upstream.h"
 #include "vary.h"
 #define MAX_WEBP_SIZE 16777216
-static void *create_ctx()
-{
-	webp_mark *m = (webp_mark *)malloc(sizeof(webp_mark));
+static void* create_ctx() {
+	webp_mark* m = (webp_mark*)malloc(sizeof(webp_mark));
 	memset(m, 0, sizeof(webp_mark));
 	m->quality = 75;
 	if (!WebPConfigPreset(&m->config, WEBP_PRESET_DEFAULT, (float)m->quality)) {
@@ -15,21 +14,19 @@ static void *create_ctx()
 	}
 	return m;
 }
-static void free_ctx(void *ctx)
-{
-	webp_mark *m = (webp_mark *)ctx;
+static void free_ctx(void* ctx) {
+	webp_mark* m = (webp_mark*)ctx;
 	free(m);
 }
-static KGL_RESULT build(kgl_access_build *build_ctx, KF_ACCESS_BUILD_TYPE build_type)
-{
-	webp_mark *m = (webp_mark *)build_ctx->module;
+static KGL_RESULT build(kgl_access_build* build_ctx, uint32_t build_type) {
+	webp_mark* m = (webp_mark*)build_ctx->module;
 	char buf[512];
 	int len = sprintf(buf, "%d", m->quality);
 	switch (build_type) {
-	case KF_ACCESS_BUILD_SHORT:
+	case 0:
 		build_ctx->write_string(build_ctx->cn, buf, len, 0);
 		break;
-	case KF_ACCESS_BUILD_HTML:
+	case 1:
 		build_ctx->write_string(build_ctx->cn, kgl_expand_string("quality:<input name='quality' value='"), 0);
 		build_ctx->write_string(build_ctx->cn, buf, len, 0);
 		build_ctx->write_string(build_ctx->cn, kgl_expand_string("'/>1 - 100(best)<br>"), 0);
@@ -38,48 +35,31 @@ static KGL_RESULT build(kgl_access_build *build_ctx, KF_ACCESS_BUILD_TYPE build_
 		build_ctx->write_string(build_ctx->cn, buf, len, 0);
 		build_ctx->write_string(build_ctx->cn, kgl_expand_string("'/>(default:16M)"), 0);
 		break;
-	case KF_ACCESS_BUILD_XML:
-		build_ctx->write_string(build_ctx->cn, kgl_expand_string("quality='"), 0);
-		build_ctx->write_string(build_ctx->cn, buf, len, 0);
-		build_ctx->write_string(build_ctx->cn, kgl_expand_string("' max='"), 0);
-		len = sprintf(buf, "%d", m->max_length);
-		build_ctx->write_string(build_ctx->cn, buf, len, 0);
-		build_ctx->write_string(build_ctx->cn, kgl_expand_string("'"), 0);
-		break;
 	}
 	return KGL_OK;
 }
-static KGL_RESULT parse(kgl_access_parse *parse_ctx, KF_ACCESS_PARSE_TYPE parse_type)
-{
-	webp_mark *m = (webp_mark *)parse_ctx->module;
-	switch (parse_type) {
-	case KF_ACCESS_PARSE_KV:
-	{
-		const char *quality = parse_ctx->get_value(parse_ctx->cn, "quality");
-		if (quality) {
-			int v = atoi(quality);
-			if (WebPConfigPreset(&m->config, WEBP_PRESET_DEFAULT, (float)v)) {
-				m->quality = v;
-			}
+static KGL_RESULT parse(kgl_access_parse_config* parse_ctx) {
+	webp_mark* m = (webp_mark*)parse_ctx->module;
+	const char* quality = parse_ctx->body->get_value(parse_ctx->cn, "quality");
+	if (quality) {
+		int v = atoi(quality);
+		if (WebPConfigPreset(&m->config, WEBP_PRESET_DEFAULT, (float)v)) {
+			m->quality = v;
 		}
-		const char *max_length = parse_ctx->get_value(parse_ctx->cn, "max");
-		if (max_length) {
-			m->max_length = atoi(max_length);
-		}
-		break;
 	}
-	default:
-		break;
+	const char* max_length = parse_ctx->body->get_value(parse_ctx->cn, "max");
+	if (max_length) {
+		m->max_length = atoi(max_length);
 	}
+
 	return KGL_OK;
 }
-static uint32_t process(KREQUEST rq, kgl_access_context *ctx, DWORD notify)
-{
-	webp_mark *m = (webp_mark *)ctx->module;
+static uint32_t process(KREQUEST rq, kgl_access_context* ctx, DWORD notify) {
+	webp_mark* m = (webp_mark*)ctx->module;
 	char buf[512];
 	buf[0] = '\0';
 	DWORD len = sizeof(buf);
-	webp_context *c = (webp_context *)malloc(sizeof(webp_context));
+	webp_context* c = (webp_context*)malloc(sizeof(webp_context));
 	if (!init_webp_context(c, &m->config)) {
 		free(c);
 		return KF_STATUS_REQ_FINISHED;
@@ -89,7 +69,7 @@ static uint32_t process(KREQUEST rq, kgl_access_context *ctx, DWORD notify)
 		c->max_length = MAX_WEBP_SIZE;
 	}
 	if (KGL_OK == ctx->f->get_variable(rq, KGL_VAR_QUERY_STRING, NULL, buf, &len)) {
-		char *p = NULL;
+		char* p = NULL;
 		if (strncmp(buf, "_wpq=", 5) == 0) {
 			p = buf + 5;
 		} else {
@@ -109,7 +89,7 @@ static uint32_t process(KREQUEST rq, kgl_access_context *ctx, DWORD notify)
 	}
 	len = sizeof(buf);
 	buf[0] = '\0';
-	if (KGL_OK == ctx->f->get_variable(rq, KGL_VAR_HEADER, "Accept", buf, &len) && is_support_webp(buf,len)) {
+	if (KGL_OK == ctx->f->get_variable(rq, KGL_VAR_HEADER, "Accept", buf, &len) && is_support_webp(buf, len)) {
 		c->accept_support = 1;
 	}
 	if (!register_upstream(rq, ctx, c)) {
@@ -126,10 +106,10 @@ static kgl_access access_model = {
 	free_ctx,
 	build,
 	parse,
+	NULL,
 	process,
 	NULL
 };
-void register_access(kgl_dso_version *ver)
-{
+void register_access(kgl_dso_version* ver) {
 	KGL_REGISTER_ACCESS(ver, &access_model);
 }
