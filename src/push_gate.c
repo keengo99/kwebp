@@ -22,13 +22,16 @@ static KGL_RESULT kwebp_write(kgl_response_body_ctx* ctx, const char* buf, int s
 	}
 	return KGL_OK;
 }
-static KGL_RESULT unsupport_writev(kgl_response_body_ctx* ctx, WSABUF* bufs, int bc)
+static KGL_RESULT unsupport_writev(kgl_response_body_ctx* ctx, const kbuf * bufs, int length)
 {
-	for (int i = 0; i < bc; i++) {
-		KGL_RESULT result = kwebp_write(ctx, (char*)bufs[i].iov_base, bufs[i].iov_len);
+	while (length > 0) {
+		int got = KGL_MIN(length, bufs->used);
+		KGL_RESULT result = kwebp_write(ctx, (char*)bufs->data, got);
 		if (result != KGL_OK) {
 			return result;
 		}
+		length -= got;
+		bufs = bufs->next;
 	}
 	return KGL_OK;
 }
