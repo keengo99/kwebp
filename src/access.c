@@ -107,8 +107,7 @@ static kgl_access access_model = {
 	build,
 	parse,
 	NULL,
-	process,
-	NULL
+	process
 };
 void register_access(kgl_dso_version* ver) {
 	KGL_REGISTER_ACCESS(ver, &access_model);

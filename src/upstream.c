@@ -45,7 +45,7 @@ static KGL_RESULT webp_open(KREQUEST rq, kgl_async_context *ctx)
 }
 static kgl_upstream upstream = {
 	sizeof(kgl_upstream),
-	0,
+	KGL_UPSTREAM_FILTER,
 	"webp",
 	create_ctx,
 	free_ctx,
